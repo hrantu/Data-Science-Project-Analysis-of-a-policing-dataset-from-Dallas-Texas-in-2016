@@ -1,0 +1,231 @@
+---
+title: "MA304-Coursework"
+author: "2111159-Md Hazzaz Rahman-Antu"
+subtitle: Analysis of a policing dataset from Dallas, Texas in 2016
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+### Don't delete this setup code chunk from your file
+knitr::opts_chunk$set(echo = FALSE)   ## DON'T ALTER THIS: this is to prevent printing the code in your "html" file.
+
+# Extend the list below to load all the packages required for your analyses here:
+#===============================================================================
+library(dsEssex)
+library("janitor")
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library("ggcorrplot")
+library("plotly")
+library(htmlwidgets)
+require(ggthemes)
+library(networkD3)
+library("lessR")
+library(leaflet)
+library("lubridate")
+# loading the data
+#=========================
+mydata = read.csv("C:\\Users\\User\\Desktop\\ma304 project\\37-00049_UOF-P_2016_prepped.csv", header= TRUE)
+View(mydata)
+glimpse(mydata)
+
+# Cleaning the data
+#=========================
+any(is.na(mydata))
+mydata %>% slice(-1)-> cleanData #Cleaning unnecessary rows
+#z <- tail(clean,-1)
+view(cleanData)
+#clean_names(cleanData)
+#colnames(cleanData)
+
+cleanData[cleanData == "" | cleanData == " "] <- NA
+any(is.na(cleanData))
+sum(is.na(cleanData))
+#na.omit(cleanData[, which(colMeans(!is.na(cleanData)) > 0.6)])
+#sum(is.na(cleanData))
+#na.omit(cleanData)
+#sum(is.na(cleanData))
+#view(cleanData)
+#colnames(cleanData)
+
+#deleting the columns with more than 50% of missing values
+miss <- c()
+for(i in 1:ncol(cleanData)) {
+  if(length(which(is.na(cleanData[,i]))) > 0.5*nrow(cleanData)) miss <- append(miss,i) 
+}
+data2 <- cleanData[,-miss]
+
+sum(is.na(data2))
+view(data2)
+
+```
+
+
+
+## Introduction
+
+The dataset was chosen for this “Exploratory Data Analysis and Data Visualisation” coursework is a policing dataset from Dallas, Texas in the year 2016. We have been tasked to provide an analysis for this dataset. It has 47 variables with 2385 observations. It has various variables on officers and their subjects like race, gender, injury, type of force used when arresting, offense, description, etc. This dataset mainly focuses on race as a factor when a different incident occurs. These data were collected from the police departments across the United States. 
+
+## Methods
+
+The methodology of the whole procedure is described here. Firstly, the dataset “37-00049_UOF-P_2016_prepped” loaded and the data has been pre-processed. To pre-process the data, data wrangling and cleaning were needed. After careful observation, many problems with the dataset occurred before me. One of them was many boxes were empty from the record. So, I had to fill those empty boxes with ‘NA’. Then I realized some of the columns have too many ‘NA’ values which could have manipulated the analysis. So I did get rid of those columns which have more than 50% of ‘NA’ values. Later, I also noticed that the first row of the dataset is almost the same as the header row. After finishing the data pre-processing I tried to raise questions and problems through my careful visualization.
+
+## Results
+
+```{r}
+ g <- ggplot(data=data2, aes(x=SUBJECT_RACE)) + geom_histogram(binwidth =
+1, fill="#2b8cbe", alpha=0.6,stat="count")
+ g <- g + xlab("Subject Race") + ylab("Frequency") +
+theme_bw() 
+ ggplotly(g)
+```
+
+When an officer targets a subject in Dallas, Texas, does it matter what the subject’s race is? If we see the histogram above, most of the subject’s race is Black which is 1333 in the count. In the second and third positions, it is Hispanic and White which have less than half the frequency as the black subject. Before interpreting anything, it can also be possible that most of the people in that particular area are Black. But after doing some research, in 2016 Dallas, Texas had a population of 1.3 million. Among the approximately 63% people are White and approximately 24% people are Black. So, it is clear in the graph that the people in Dallas, Texas are facing racial issues when it comes to policing.
+
+```{r}
+c1 <- ggplot(data2, aes(OFFICER_GENDER))
+c2 <- c1 +geom_bar(position = "stack", fill=c("pink","lightblue"))
+ggplotly(c2)
+```
+
+Is the police department in Dallas, Texas is male dominant? From the bar plot above, it is clearly shown that there is a huge gap between the male officers and female officers in terms of number in Dallas, Texas. About approximately 90% of police officers are in there is male and approximately 10% of them are female. So, we can tell that the police department in Dallas, Texas is male dominant.
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE}
+fr2 <- data2 %>%
+  group_by(SUBJECT_RACE, SUBJECT_WAS_ARRESTED) %>%
+  summarize(Freq=n())
+# Grouped
+g3 <- ggplot(fr2, aes(fill=SUBJECT_WAS_ARRESTED, y=Freq, x=SUBJECT_RACE)) + 
+    geom_bar(position="dodge", stat="identity")
+ggplotly(g3)
+```
+
+It is shown in this bar chart that, in case of subjects getting arrested whether the subject’s race plays any role or not. Approximately 86% of the black subject get arrested and for White and Hispanic subjects it is approximately 88% and 86%. So, in the case of arresting the subjects, there is no evidence of racial favoritism.
+
+```{r}
+b1 <- as.numeric(data2$OFFICER_YEARS_ON_FORCE)
+g <- ggplot(data2, aes(x=b1)) + geom_density(fill="springgreen2",
+alpha=0.6)
+g <- g + ylab("Density of Officer Years On Force") + xlab("Years")
+ggplotly(g)
+
+```
+
+From the density plot, we can state that majority of the police officers in the police department in Dallas, Texas are new with less experience.
+
+```{r}
+cat <- table(data2$OFFICER_RACE)
+p <- pie(cat, col = hcl.colors(length(cat), "BluYl"))
+ggplotly(p)
+```
+
+From the pie chart, we can see that most of the officers in the Dallas, Texas police department are White. It also could be possible that a big proportion of the population in there are White people.
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE}
+any(is.na(data2$SUBJECT_GENDER))
+x <- ggplot(data2, aes(SUBJECT_GENDER))
+x2 <- x +geom_bar(position = "stack", fill=c("pink","lightblue","red","purple"))
+ggplotly(x2)
+```
+
+This is a bar chart of the subject’s gender. Besides 10 null values and 1 unknown value, we can also see here that it has also male dominance. From here we can say that females are less likely to involve in a crime.
+
+```{r}
+#box-plot
+b1 <- as.numeric(data2$OFFICER_YEARS_ON_FORCE)
+g <- ggplot(data2, aes(x=SUBJECT_WAS_ARRESTED, y=b1)) + xlab("Subject Arresting") + ylab("Officer's Years on force")
+g1 <- g + geom_boxplot(fill="purple", alpha=0.4)+ theme_bw() +
+theme(axis.text=element_text(face='bold', size = 12, angle = 45, hjust = 1))
+ggplotly(g1)
+```
+
+In the box plot, it is shown which officers are most likely to arrest their subject when an incident happens, officers with less experience or with more experience. When it comes to arresting subjects, both yes and no has same median value which is 6.
+
+```{r}
+Officer_Experience <- as.numeric(data2$OFFICER_YEARS_ON_FORCE)
+ggplot(data2, aes(OFFICER_GENDER, OFFICER_HOSPITALIZATION)) +
+geom_raster(aes(fill=Officer_Experience))
+```
+
+In this raster plot we’re trying to show, which officers are hospitalized experienced once or the less experienced one. From the plot, it’s clear the less experienced officers are more likely to be hospitalized if they are injured in an incident.
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE}
+fr <- data2 %>%
+  group_by(SUBJECT_RACE, OFFICER_RACE) %>%
+  summarize(Freq=n())
+
+g8 <- ggplot(fr, aes(x = SUBJECT_RACE, y = OFFICER_RACE, fill = Freq )) +
+  geom_tile()
+ggplotly(g8)
+```
+
+From this heat map, I tried to visualize what is different race’s officer’s subject’s races. The highest frequency in this map is when the officer is white and the subject is black. The frequency between them is 846 which is significantly greater than others.
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE}
+df <- data2
+df$INCIDENT_DATE <- as.Date(df$INCIDENT_DATE, format = "%m/%d/%Y")
+df$INCIDENT_DATE <- gsub("00","20",df$INCIDENT_DATE)
+df$INCIDENT_DATE <- as.Date(df$INCIDENT_DATE, format = "%Y-%m-%d")
+df$INCIDENT_TIME <- format(strptime(df$INCIDENT_TIME, "%I:%M:%S %p"), "%H:%M:%S")
+df$INCIDENT_MONTH <- months(as.Date(df$INCIDENT_DATE))
+df$INC_MONTH <-format(df$INCIDENT_DATE,"%m")
+df$INCIDENT_HOUR <- as.numeric(substr(df$INCIDENT_TIME, 0, 2))
+df$INCIDENT_DAY <- wday(df$INCIDENT_DATE, label=TRUE)
+df$INC_HOUR <- substr(df$INCIDENT_TIME, 0, 2)
+df$INC_DATE <- substr(df$INCIDENT_DATE, 9, 10)
+
+## Create group of datas:
+
+df_year <-  df %>%
+  group_by(INCIDENT_DATE,INCIDENT_MONTH,INCIDENT_DAY) %>%
+  summarize(count = n())
+
+df_month <-  df %>%
+  group_by(INC_MONTH) %>%
+  summarize(count = n())
+
+df_day <-  df %>%
+  group_by(INCIDENT_DAY,INCIDENT_HOUR) %>%
+  summarize(count = n())
+
+df$INC_HOUR <- substr(df$INCIDENT_TIME, 0, 2)
+
+df   %>% group_by(INC_HOUR) %>%
+  summarize(avg =n()) -> df_hour_n
+c1 <- ggplot(data = df_year, aes(INCIDENT_DATE, count)) +   geom_line(size=0.5, col="gray") +
+geom_smooth(method = "loess", color = "red", span = 1/5) + theme_bw() + labs(x="Months ", y= "INCIDENT COUNTS", title="Year vs Incidents") 
+
+
+r1 <- ggplot(df_month, aes(x=INC_MONTH, y =count, group=1)) + geom_line()  + geom_line( size = 1,colour ="steelblue") + labs(x="MONTHS OF 2016", y= "INCIDENT COUNTS", title="Months vs  Incident Rates")  + theme_bw() +geom_area(alpha=0.2,position="identity")
+
+
+r2 <- ggplot(df_hour_n, aes(x = INC_HOUR, y = avg, group = "count")) + geom_line( size = 1, colour = "orange") + labs(x="HOURS IN A DAY", y= "INCIDENT COUNTS", title="Hours vs  Incident Rates")+ theme_bw() +
+theme(axis.text.x=element_text(angle=-90, vjust=0.5)) +
+
+  labs(x = "Hour of the day", y = "count") + theme_bw() + geom_area(alpha=0.1,position="identity")
+
+
+
+ggplotly(c1)
+ggplotly(r1)
+ggplotly(r2)
+
+
+```
+
+From this time series data, we’re trying to see which time, month, or year of the time is most likely an incident to happen. From the Hours vs Incident Rates graph, we can tell that when it is dark and about to get dark an incident is most likely to happen. The incident count is highest when the time is 20:00. Incident rate decreases after 2 in the morning. In the Months vs Incident rates graph, we can see that, in the first couple of months incident rates slightly increase then the rate goes down till July. The highest incident happens in March and the lowest in December. To the lack of the data Year vs Incidents couldn’t be interpreted properly but we can see that going into a new year which is 2017, the incident rate is slightly decreasing.
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE,error=FALSE}
+ leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(data = data2 , lng=as.numeric(data2$LOCATION_LONGITUDE), lat=as.numeric(data2$LOCATION_LATITUDE), popup = ~(data2$DIVISION) )
+```
+
+In this map, we can see that incident's location in Dallas, Texas. Incidents happened more or less in all divisions in Dallas, Texas but the most congested area of the incident is in the Central division. 
+
+## Discussion
+To summarise, we can say from the data analysis that, Dallas, Texas has a lot of racial aspects when it comes to policing. The most challenging part of this analysis was the dataset. Many data were missing from the dataset. Also, there was hardly any numerical value and for this reason, before every plot the data needed to be pre-processed. If the dataset haven't had the missing values, then the analysis would have been more accurate.
+
